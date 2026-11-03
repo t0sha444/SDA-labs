@@ -1,16 +1,9 @@
 from collections import Counter
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from typing import Optional
 
 BASE = Path(__file__).parent
-
-
-def load_solution(filename, module_name):
-    path = BASE / "solutions" / filename
-    spec = spec_from_file_location(module_name, path)
-    module = module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.Solution()
 
 
 class Node:
@@ -25,6 +18,17 @@ def list_values(head):
         values.append(head.val)
         head = head.next
     return values
+
+
+def load_solution(filename, module_name):
+    path = BASE / "solutions" / filename
+    spec = spec_from_file_location(module_name, path)
+    module = module_from_spec(spec)
+    # LeetCode normally supplies these names in its editor environment.
+    module.ListNode = Node
+    module.Optional = Optional
+    spec.loader.exec_module(module)
+    return module.Solution()
 
 
 def test_number_of_steps():
@@ -78,45 +82,39 @@ def test_sort_array():
         assert Counter(result) == Counter(original)
 
 
-def test_intersection_helper_and_reverse():
-    # A small helper used to validate pointer identity for LeetCode 160.
+def test_intersection_solution():
+    solution = load_solution(
+        "160_intersection_two_linked_lists.py", "problem_160"
+    )
+
     common = Node(8, Node(10))
     head_a = Node(3, Node(1, common))
     head_b = Node(4, Node(6, Node(7, common)))
-
-    pointer_a = head_a
-    pointer_b = head_b
-    while pointer_a is not pointer_b:
-        pointer_a = pointer_a.next if pointer_a else head_b
-        pointer_b = pointer_b.next if pointer_b else head_a
-    assert pointer_a is common
+    assert solution.getIntersectionNode(head_a, head_b) is common
 
     no_intersection_a = Node(1, Node(2))
     no_intersection_b = Node(3)
-    pointer_a = no_intersection_a
-    pointer_b = no_intersection_b
-    while pointer_a is not pointer_b:
-        pointer_a = pointer_a.next if pointer_a else no_intersection_b
-        pointer_b = pointer_b.next if pointer_b else no_intersection_a
-    assert pointer_a is None
+    assert solution.getIntersectionNode(no_intersection_a, no_intersection_b) is None
+    assert solution.getIntersectionNode(None, Node(5)) is None
 
-    # Validate the same iterative pointer reversal used by the LeetCode solution.
+
+def test_reverse_linked_list_solution():
+    solution = load_solution("206_reverse_linked_list.py", "problem_206")
+
     head = Node(1, Node(2, Node(3)))
-    previous = None
-    current = head
-    while current:
-        next_node = current.next
-        current.next = previous
-        previous = current
-        current = next_node
-    assert list_values(previous) == [3, 2, 1]
-    assert list_values(None) == []
-    assert list_values(Node(5)) == [5]
+    reversed_head = solution.reverseList(head)
+    assert list_values(reversed_head) == [3, 2, 1]
+
+    assert solution.reverseList(None) is None
+    single = Node(5)
+    assert solution.reverseList(single) is single
+    assert list_values(solution.reverseList(single)) == [5]
 
 
 if __name__ == "__main__":
     test_number_of_steps()
     test_merge_sorted_array()
     test_sort_array()
-    test_intersection_helper_and_reverse()
+    test_intersection_solution()
+    test_reverse_linked_list_solution()
     print("All Lab 3 local tests passed.")
