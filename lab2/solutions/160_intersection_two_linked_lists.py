@@ -1,3 +1,5 @@
+from typing import Optional
+
 # Definition for singly-linked list is provided by LeetCode.
 # class ListNode:
 #     def __init__(self, x):
